@@ -68,6 +68,7 @@ int ac_stim_main(int argc, char *argv[]) {
     double *array = (double *)((char *)mapped + sizeof(ac_header_t));
     // Añadir valor
     array[actual_idx] += value;
+    double new_value = array[actual_idx];  // Guardar el valor antes de desmapear
     // Sincronizar y desmapear
     msync(mapped, file_size, MS_SYNC);
     ac_munmap_file(mapped, file_size, fd);
@@ -80,6 +81,6 @@ int ac_stim_main(int argc, char *argv[]) {
     meta.mtime = mtime;
     meta.checksum = ac_simple_checksum(&header, sizeof(ac_header_t));
     ac_write_metadata(name, &meta);
-    ac_info("Estimulación aplicada: [%ld] += %g → %g", idx, value, array[actual_idx]);
+    ac_info("Estimulación aplicada: [%ld] += %g → %g", idx, value, new_value);
     return 0;
 }
