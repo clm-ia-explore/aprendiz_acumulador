@@ -7,6 +7,7 @@ import mmap
 import array
 import zlib
 import math
+import json
 
 VERSION = 1
 
@@ -80,6 +81,14 @@ def shm_lock_path(name):
     return os.path.join(d, "acc_" + name + ".lock")
 
 
+def shm_meta_path(name):
+    """Path for metadata cache file associated with a runtime."""
+    validate_name(name)
+    d = shm_dir()
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, "acc_" + name + ".meta")
+
+
 class Lock:
     def __init__(self, name, shared=False):
         self.lock_path = shm_lock_path(name)
@@ -97,6 +106,40 @@ class Lock:
         os.close(self.fd)
         self.fd = None
         return False
+
+
+def read_metadata(name):
+    """Read cached metadata for a runtime. Returns dict or None if not found/invalid."""
+    meta_path = shm_meta_path(name)
+    try:
+        with open(meta_path, "r") as f:
+            data = json.load(f)
+        if isinstance(data, dict) and "n" in data and "mtime" in data:
+            bin_path = shm_bin_path(name)
+            if os.path.exists(bin_path):
+                current_mtime = os.path.getmtime(bin_path)
+                if data.get("mtime") == current_mtime:
+                    return data
+        return None
+    except (OSError, json.JSONDecodeError, KeyError):
+        return None
+
+
+def write_metadata(name, n):
+    """Write cached metadata for a runtime."""
+    meta_path = shm_meta_path(name)
+    bin_path = shm_bin_path(name)
+    try:
+        mtime = os.path.getmtime(bin_path)
+        data = {"n": n, "mtime": mtime}
+        tmp = meta_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, meta_path)
+    except OSError:
+        pass
 
 
 def clamp_int64(x):
@@ -189,6 +232,7 @@ def init_runtime(name, n, force=False):
         if os.path.exists(bin_path) and not force:
             raise AccError("runtime already exists; use --force")
         write_runtime_file(bin_path, n, None)
+        write_metadata(name, n)
 
 
 def apply_stimulus(name, index, value):
@@ -202,7 +246,11 @@ def apply_stimulus(name, index, value):
             raise AccError("runtime not initialized")
 
         try:
-            n = read_runtime_header(f)
+            meta = read_metadata(name)
+            if meta is not None:
+                n = meta["n"]
+            else:
+                n = read_runtime_header(f)
 
             if index < 0 or index >= n:
                 raise AccError("index out of range")
@@ -237,7 +285,11 @@ def read_runtime_values(name):
             raise AccError("runtime not initialized")
 
         try:
-            n = read_runtime_header(f)
+            meta = read_metadata(name)
+            if meta is not None:
+                n = meta["n"]
+            else:
+                n = read_runtime_header(f)
 
             st = os.fstat(f.fileno())
             expected = VALUES_OFFSET + 8 * n
@@ -322,6 +374,7 @@ def reconstruct_runtime(name, file_path, force=False):
         if os.path.exists(bin_path) and not force:
             raise AccError("runtime already exists; use --force")
         write_runtime_file(bin_path, n, values_bytes)
+        write_metadata(name, n)
 
 
 def clamp01(x):
