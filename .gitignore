@@ -1,1 +1,3 @@
-Nothing should be ignored based on the provided file changes. The modification of 'acc_common.py' represents a source code file change, which does not warrant any new ignore rules.
+test/*.dat
+test/*.qdat
+__pycache__
