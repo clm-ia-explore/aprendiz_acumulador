@@ -3,30 +3,6 @@
  */
 #ifndef AC_INIT_H
 #define AC_INIT_H
-// Función principal para el comando init
+// Función principal para comando init
 int ac_init_main(int argc, char *argv[]);
 #endif // AC_INIT_H
-=== include/ac_commands.h ===
-/*
- * Aprendiz Acumulador - Cabeceras para comandos restantes
- */
-#ifndef AC_STIM_H
-#define AC_STIM_H
-int ac_stim_main(int argc, char *argv[]);
-#endif
-#ifndef AC_QUERY_H
-#define AC_QUERY_H
-int ac_query_main(int argc, char *argv[]);
-#endif
-#ifndef AC_VIEW_H
-#define AC_VIEW_H
-int ac_view_main(int argc, char *argv[]);
-#endif
-#ifndef AC_MEM_H
-#define AC_MEM_H
-int ac_mem_main(int argc, char *argv[]);
-#endif
-#ifndef AC_QUANT_H
-#define AC_QUANT_H
-int ac_quant_main(int argc, char *argv[]);
-#endif

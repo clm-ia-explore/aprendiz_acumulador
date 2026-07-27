@@ -1,9 +1,11 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Test files
-test/*.dat
-test/*.qdat
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.out
+acumulador
+# Dependencies
+# Logs and temp files
+# Environment
+# Editors
+```
