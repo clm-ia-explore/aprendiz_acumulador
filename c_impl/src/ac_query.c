@@ -38,15 +38,15 @@ int ac_query_main(int argc, char *argv[]) {
         return 1;
     }
     // Leer cabecera
-    ac_header_t header;
+    ac_bin_header_t header;
     if (ac_read_header(filepath, &header) != 0) {
         ac_error("No se pudo leer la cabecera");
         return 1;
     }
     // Validar índice
-    int64_t actual_idx = ac_parse_index(idx, (int64_t)header.size);
-    if (actual_idx < 0 || actual_idx >= (int64_t)header.size) {
-        ac_error("Índice fuera de rango (%ld no está en [0, %lu])", idx, (unsigned long)(header.size - 1));
+    int64_t actual_idx = ac_parse_index(idx, (int64_t)header.n);
+    if (actual_idx < 0 || actual_idx >= (int64_t)header.n) {
+        ac_error("Índice fuera de rango (%ld no está en [0, %lu])", idx, (unsigned long)(header.n - 1));
         return 1;
     }
     // Mapear archivo (solo lectura)
@@ -58,7 +58,7 @@ int ac_query_main(int argc, char *argv[]) {
         return 1;
     }
     // Los datos comienzan después de la cabecera
-    double *array = (double *)((char *)data + sizeof(ac_header_t));
+    double *array = (double *)((char *)data + sizeof(ac_bin_header_t));
     // Leer valor
     double value = array[actual_idx];
     // Desmapear
