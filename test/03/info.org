@@ -1,0 +1,29 @@
+#+TITLE:
+#+STARTUP: content indent
+
+
+# iniciar
+../../acc_init.py aaa 64
+
+# agregar pesos
+../../acc_stim.py aaa 0 1
+
+# visualización de matriz
+../../acc_view.py aaa minimax --format heat
+
+# visualización de valor individual
+../../acc_view.py aaa --index 4 --method rank --format int
+../../acc_view.py aaa --index 4 --method raw
+
+
+# visualización con actualización constante
+while true; do clear; ../../acc_view.py aaa --method rank --format heat --heat-chars "0123456789"; sleep 3 ; done
+
+# otras secuencias de caracteres para la visualización
+--heat-chars " ▁▂▃▄▅▆▇█"
+--heat-chars " ▏▎▍▌▋▊▉█"
+--heat-chars " ⠁⠃⠇⠏⠟⠿⡿⣿"
+
+
+# almacenar valores
+../../acc_mem.py memorize aaa aaa-01.dat --force

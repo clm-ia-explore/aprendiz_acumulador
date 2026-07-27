@@ -1,0 +1,14 @@
+#+TITLE:
+#+STARTUP: content indent
+
+# iniciar
+../../acc_init.py cam 64
+
+# borrar pesos
+rm /dev/shm/acc_cam.*
+
+# visualización de matriz
+../../acc_view.py cam minimax --format heat
+
+# visualización con actualización constante
+while true; do clear; ../../acc_view.py cam --method rank --format heat --heat-chars " ▁▂▃▄▅▆▇█"; sleep 3 ; done
