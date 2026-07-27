@@ -6,13 +6,15 @@
 #define AC_COMMON_H
 #include <stdint.h>
 #include <stddef.h>
-// Magic number para identificar archivos válidos
-#define AC_MAGIC 0x41434355  // "ACCU" en ASCII
+// Magic numbers para identificar archivos válidos
+#define AC_MAGIC      0x41434355  // "ACCU" en ASCII (archivo .bin runtime)
+#define AC_DAT_MAGIC  0x41434441  // "ACDA" en ASCII (archivo .dat snapshot)
+#define AC_QDAT_MAGIC 0x41435144  // "ACQD" en ASCII (archivo .qdat cuantizado)
 // Versión del formato de archivo
 #define AC_VERSION 2
 // Máximo tamaño de nombre de acumulador
 #define AC_MAX_NAME_LEN 256
-// Estructura de cabecera binaria (se escribe al inicio del archivo .bin/.dat)
+// Estructura de cabecera binaria para archivos .bin (runtime)
 typedef struct {
     uint32_t magic;           // Magic number
     uint32_t version;         // Versión del formato
@@ -20,6 +22,24 @@ typedef struct {
     uint64_t timestamp;       // Timestamp de creación/modificación
     char reserved[32];        // Reservado para futuro uso
 } ac_header_t;
+// Estructura de cabecera para archivos .dat (snapshot)
+typedef struct {
+    uint32_t magic;           // MAGIC_DAT
+    uint32_t version;         // Versión del formato
+    uint64_t size;            // Número de elementos (n)
+    uint32_t flags;           // Reservado para futuro
+    uint32_t crc32;           // CRC32 de los datos
+} ac_dat_header_t;
+// Estructura de cabecera para archivos .qdat (cuantizado)
+typedef struct {
+    uint32_t magic;           // MAGIC_QDAT
+    uint32_t version;         // Versión del formato
+    uint64_t size;            // Número de elementos (n)
+    uint32_t method;          // Método de normalización (código)
+    int32_t  qmin;            // Valor mínimo cuantizado
+    int32_t  qmax;            // Valor máximo cuantizado
+    uint32_t crc32;           // CRC32 de los datos
+} ac_qdat_header_t;
 // Estructura para metadatos en caché (.meta)
 typedef struct {
     uint64_t size;
@@ -51,9 +71,9 @@ const char* ac_get_data_dir(void);
 int ac_build_path(char *buf, size_t bufsize, const char *name, const char *ext);
 // Construir ruta para archivo de metadatos (.meta)
 int ac_build_meta_path(char *buf, size_t bufsize, const char *name);
-// Leer cabecera de archivo binario
+// Leer cabecera de archivo binario (.bin)
 int ac_read_header(const char *filepath, ac_header_t *header);
-// Escribir cabecera de archivo binario
+// Escribir cabecera de archivo binario (.bin)
 int ac_write_header(const char *filepath, const ac_header_t *header);
 // Leer metadatos desde caché (.meta)
 int ac_read_metadata(const char *name, ac_meta_cache_t *meta);
@@ -67,12 +87,40 @@ void* ac_mmap_file(const char *filepath, size_t *size, int *fd, int writable);
 int ac_munmap_file(void *addr, size_t size, int fd);
 // Calcular checksum simple para validación de metadatos
 uint32_t ac_simple_checksum(const void *data, size_t len);
+// Calcular CRC32 (estándar)
+uint32_t ac_crc32(const void *data, size_t len);
 // Parsear método de normalización desde string
 ac_norm_method_t ac_parse_norm_method(const char *str);
+// Obtener nombre de método de normalización
+const char* ac_get_norm_method_name(ac_norm_method_t method);
 // Parsear formato de visualización desde string
 ac_view_format_t ac_parse_view_format(const char *str);
 // Convertir índice con soporte para negativos (desde el final)
 int64_t ac_parse_index(int64_t idx, int64_t size);
+// Leer cabecera de archivo .dat
+int ac_read_dat_header(const char *filepath, ac_dat_header_t *header);
+// Escribir cabecera de archivo .dat
+int ac_write_dat_header(const char *filepath, const ac_dat_header_t *header);
+// Leer cabecera de archivo .qdat
+int ac_read_qdat_header(const char *filepath, ac_qdat_header_t *header);
+// Escribir cabecera de archivo .qdat
+int ac_write_qdat_header(const char *filepath, const ac_qdat_header_t *header);
+// Leer valores desde archivo .dat
+int ac_read_dat_values(const char *filepath, int64_t **values, uint64_t *n);
+// Escribir valores a archivo .dat
+int ac_write_dat_file(const char *filepath, uint64_t n, const int64_t *values, int force);
+// Leer valores cuantizados desde archivo .qdat
+int ac_read_qdat_values(const char *filepath, int32_t **values, uint64_t *n, 
+                        ac_norm_method_t *method, int32_t *qmin, int32_t *qmax);
+// Escribir valores cuantizados a archivo .qdat
+int ac_write_qdat_file(const char *filepath, uint64_t n, ac_norm_method_t method,
+                       int32_t qmin, int32_t qmax, const int32_t *values, int force);
+// Normalizar valores según método
+int ac_normalize_values(const double *input, double *output, uint64_t n,
+                        ac_norm_method_t method, double temperature, double scale);
+// Cuantizar valores float a enteros
+int ac_quantize_floats(const double *floats, int32_t *output, uint64_t n,
+                       int32_t qmin, int32_t qmax, int renorm_max);
 // Imprimir mensaje de error estandarizado
 void ac_error(const char *msg, ...);
 // Imprimir mensaje de información
