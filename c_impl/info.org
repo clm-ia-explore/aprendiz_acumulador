@@ -1,0 +1,160 @@
+* Estructura de Archivos para Implementación en C
+
+La implementación en C del sistema "Aprendiz Acumulador" seguirá una estructura modular y profesional, inspirada en el estilo de herramientas Unix como busybox. El objetivo es proporcionar un único binario eficiente que pueda comportarse como múltiples comandos según cómo sea invocado.
+
+** Estructura Propuesta
+
+#+BEGIN_SRC text
+c_impl/
+├── src/
+│   ├── main.c              # Punto de entrada principal (estilo busybox)
+│   ├── acc_common.h        # Cabecera común: constantes, tipos, utilidades
+│   ├── acc_common.c        # Implementación de funciones compartidas
+│   ├── cmd_init.c          # Comando: init (inicializar acumulador)
+│   ├── cmd_stim.c          # Comando: stim (estimular posición)
+│   ├── cmd_query.c         # Comando: query (consultar valor)
+│   ├── cmd_view.c          # Comando: view (visualizar matriz)
+│   ├── cmd_mem.c           # Comando: mem (memorizar/reconstruir)
+│   ├── cmd_quant.c         # Comando: quant (cuantizar datos)
+│   └── utils/
+│       ├── mmap_utils.h    # Utilidades para memory-mapping
+│       ├── mmap_utils.c
+│       ├── meta_cache.h    # Caché de metadatos en cabecera
+│       ├── meta_cache.c
+│       ├── normalizers.h   # Implementación de métodos de normalización
+│       ├── normalizers.c
+│       └── formats.h       # Formateo de salida (int, float, heat, csv)
+│       └── formats.c
+├── include/                # Cabeceras públicas (si se expone como librería)
+│   └── accumlator.h
+├── Makefile                # Sistema de compilación (dev/release)
+├── build/                  # Directorio de objetos y binarios (generado)
+│   ├── dev/                # Versión de desarrollo (sin optimización, debug)
+│   └── release/            # Versión release (-O3, optimizada)
+├── tests/                  # Tests específicos para la versión C
+│   └── test_basic.sh
+├── info.org                # Este archivo: documentación de estructura
+└── README.md               # Instrucciones específicas de compilación y uso
+
+** Descripción de Componentes
+
+*** main.c (Estilo Busybox)
+El punto de entrada principal detectará cómo fue invocado el programa:
+- Por nombre de enlace simbólico: ~acc-init~, ~acc-stim~, etc.
+- Por argumento posicional: ~accumulator init ...~, ~accumulator stim ...~
+
+Ejemplo de uso:
+#+BEGIN_SRC bash
+# Como enlaces simbólicos
+ln -s build/release/accumulator acc-init
+ln -s build/release/accumulator acc-stim
+./acc-init demo 16
+./acc-stim demo 5 20
+
+# O con argumentos posicionales
+./build/release/accumulator init demo 16
+./build/release/accumulator stim demo 5 20
+#+END_SRC
+
+*** cmd_*.c / cmd_*.h
+Cada comando tendrá su propio archivo fuente con:
+- Función de inicialización de argumentos
+- Validación de parámetros
+- Lógica específica del comando
+- Manejo de errores consistente
+
+*** utils/mmap_utils.*
+Implementación de acceso por memory-mapping para:
+- Leer/escribir archivos .bin, .dat, .qdat sin cargarlos completamente en RAM
+- Soporte para archivos de gran tamaño (>1GB)
+- Acceso concurrente seguro
+
+*** utils/meta_cache.*
+Sistema de caché de metadatos en cabecera binaria:
+- Lectura rápida de tamaño y timestamp del acumulador
+- Invalidación automática cuando el archivo cambia
+- Almacenamiento en archivo .meta separado (JSON simple)
+
+*** utils/normalizers.*
+Implementación eficiente de los 9 métodos de normalización:
+- raw, minmax, posmax, signed01, sum01, softmax, sigmoid, tanh01, rank
+- Optimizados para operaciones vectorizadas (SIMD cuando sea posible)
+
+*** utils/formats.*
+Formateo de salida para visualización:
+- int, float, heat (mapa de calor), csv
+- Opciones de formato: con/sin espacios, alineación
+
+** Makefile
+
+El Makefile soportará dos modos de compilación:
+
+*** Modo Development (dev)
+#+BEGIN_SRC make
+make dev
+#+END_SRC
+- Compilación sin optimización (-O0)
+- Información de debug incluida (-g)
+- Defines de debug activados
+- Ubicación: ~build/dev/accumulator~
+
+*** Modo Release (release)
+#+BEGIN_SRC make
+make release
+#+END_SRC
+- Optimización máxima (-O3)
+- Optimizaciones específicas de arquitectura (-march=native)
+- Sin información de debug
+- Link-time optimization (LTO) si está disponible
+- Ubicación: ~build/release/accumulator~
+
+*** Targets adicionales
+- ~make clean~: Limpia todos los archivos generados
+- ~make test~: Ejecuta tests básicos
+- ~make install~: Instala el binario en /usr/local/bin (opcional)
+
+** Flujo de Trabajo Sugerido
+
+1. Desarrollo inicial:
+   #+BEGIN_SRC bash
+   cd c_impl
+   make dev
+   ./build/dev/accumulator init test 100
+   #+END_SRC
+
+2. Pruebas y validación:
+   #+BEGIN_SRC bash
+   make test
+   #+END_SRC
+
+3. Compilación para producción:
+   #+BEGIN_SRC bash
+   make release
+   cp build/release/accumulator /usr/local/bin/
+   #+END_SRC
+
+4. Crear enlaces simbólicos para conveniencia:
+   #+BEGIN_SRC bash
+   cd /usr/local/bin
+   ln -s accumulator acc-init
+   ln -s accumulator acc-stim
+   # ... etc
+   #+END_SRC
+
+** Consideraciones de Diseño
+
+- **Portabilidad**: Código C estándar (C99/C11) compatible con Linux, macOS, BSD
+- **Seguridad**: Validación exhaustiva de entradas, manejo seguro de memoria
+- **Rendimiento**: Uso de mmap, operaciones en streaming, minimización de allocs
+- **Mantenibilidad**: Código modular, documentación inline, tests automatizados
+- **Compatibilidad**: Mantener compatibilidad binaria con formatos .dat, .qdat existentes
+
+** Próximos Pasos
+
+1. Implementar ~main.c~ con detección de modo de invocación
+2. Desarrollar ~cmd_init.c~ y ~acc_common.c~ como base
+3. Añadir soporte mmap y meta_cache
+4. Implementar comandos restantes uno por uno
+5. Crear Makefile con targets dev/release
+6. Escribir tests específicos para la versión C
+7. Documentar API interna y decisiones de diseño

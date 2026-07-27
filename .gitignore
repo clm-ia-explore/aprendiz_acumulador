@@ -1,9 +1,9 @@
-# Python
-__pycache__/
+```
+# Compiled Python files
 *.pyc
-*.pyo
-*.pyd
+__pycache__/
 
-# Test files
+# Test data files (if they are temporary/generated)
 test/*.dat
 test/*.qdat
+```
