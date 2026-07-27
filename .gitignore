@@ -1,7 +1,39 @@
 ```
 # Compiled and build artifacts
+*.bin
+*.meta
 *.o
 *.obj
 *.out
-acumulador
+*.exe
+*.dll
+*.so
+*.a
+
+# Dependencies
+.venv/
+venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Build directories
+build/
+dist/
+target/
 ```

@@ -11,34 +11,37 @@
 #define AC_DAT_MAGIC  0x41434441  // "ACDA" en ASCII (archivo .dat snapshot)
 #define AC_QDAT_MAGIC 0x41435144  // "ACQD" en ASCII (archivo .qdat cuantizado)
 // Versión del formato de archivo
-#define AC_VERSION 2
+#define AC_VERSION 1
 // Máximo tamaño de nombre de acumulador
 #define AC_MAX_NAME_LEN 256
 // Estructura de cabecera binaria para archivos .bin (runtime)
+// Debe coincidir con el formato Python: 8sIIII = 8+4+4+4+4 = 24 bytes
 typedef struct {
-    uint32_t magic;           // Magic number
-    uint32_t version;         // Versión del formato
-    uint64_t size;            // Número de elementos (n)
-    uint64_t timestamp;       // Timestamp de creación/modificación
-    char reserved[32];        // Reservado para futuro uso
-} ac_header_t;
+    char     magic[8];          // Magic number (string)
+    uint32_t version;           // Versión del formato
+    uint32_t n;                 // Número de elementos
+    uint32_t flags;             // Reservado
+    uint32_t reserved2;         // Reservado
+} ac_bin_header_t;
 // Estructura de cabecera para archivos .dat (snapshot)
+// Formato Python: 8sIIII = 24 bytes
 typedef struct {
-    uint32_t magic;           // MAGIC_DAT
-    uint32_t version;         // Versión del formato
-    uint64_t size;            // Número de elementos (n)
-    uint32_t flags;           // Reservado para futuro
-    uint32_t crc32;           // CRC32 de los datos
+    char     magic[8];          // MAGIC_DAT (string)
+    uint32_t version;           // Versión del formato
+    uint32_t n;                 // Número de elementos (n)
+    uint32_t flags;             // Reservado para futuro
+    uint32_t crc32;             // CRC32 de los datos
 } ac_dat_header_t;
 // Estructura de cabecera para archivos .qdat (cuantizado)
+// Formato Python: 8sIIIiiI = 8+4+4+4+4+4+4 = 32 bytes
 typedef struct {
-    uint32_t magic;           // MAGIC_QDAT
-    uint32_t version;         // Versión del formato
-    uint64_t size;            // Número de elementos (n)
-    uint32_t method;          // Método de normalización (código)
-    int32_t  qmin;            // Valor mínimo cuantizado
-    int32_t  qmax;            // Valor máximo cuantizado
-    uint32_t crc32;           // CRC32 de los datos
+    char     magic[8];          // MAGIC_QDAT (string)
+    uint32_t version;           // Versión del formato
+    uint32_t n;                 // Número de elementos (n)
+    uint32_t method;            // Método de normalización (código)
+    int32_t  qmin;              // Valor mínimo cuantizado
+    int32_t  qmax;              // Valor máximo cuantizado
+    uint32_t crc32;             // CRC32 de los datos
 } ac_qdat_header_t;
 // Estructura para metadatos en caché (.meta)
 typedef struct {
@@ -72,9 +75,9 @@ int ac_build_path(char *buf, size_t bufsize, const char *name, const char *ext);
 // Construir ruta para archivo de metadatos (.meta)
 int ac_build_meta_path(char *buf, size_t bufsize, const char *name);
 // Leer cabecera de archivo binario (.bin)
-int ac_read_header(const char *filepath, ac_header_t *header);
+int ac_read_header(const char *filepath, ac_bin_header_t *header);
 // Escribir cabecera de archivo binario (.bin)
-int ac_write_header(const char *filepath, const ac_header_t *header);
+int ac_write_header(const char *filepath, const ac_bin_header_t *header);
 // Leer metadatos desde caché (.meta)
 int ac_read_metadata(const char *name, ac_meta_cache_t *meta);
 // Escribir metadatos a caché (.meta)

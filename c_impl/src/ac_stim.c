@@ -45,15 +45,15 @@ int ac_stim_main(int argc, char *argv[]) {
         return 1;
     }
     // Leer cabecera
-    ac_header_t header;
+    ac_bin_header_t header;
     if (ac_read_header(filepath, &header) != 0) {
         ac_error("No se pudo leer la cabecera");
         return 1;
     }
     // Validar índice
-    int64_t actual_idx = ac_parse_index(idx, (int64_t)header.size);
-    if (actual_idx < 0 || actual_idx >= (int64_t)header.size) {
-        ac_error("Índice fuera de rango (%ld no está en [0, %lu])", idx, (unsigned long)(header.size - 1));
+    int64_t actual_idx = ac_parse_index(idx, (int64_t)header.n);
+    if (actual_idx < 0 || actual_idx >= (int64_t)header.n) {
+        ac_error("Índice fuera de rango (%ld no está en [0, %lu])", idx, (unsigned long)(header.n - 1));
         return 1;
     }
     // Mapear archivo
@@ -65,7 +65,7 @@ int ac_stim_main(int argc, char *argv[]) {
         return 1;
     }
     // Los datos comienzan después de la cabecera
-    double *array = (double *)((char *)mapped + sizeof(ac_header_t));
+    double *array = (double *)((char *)mapped + sizeof(ac_bin_header_t));
     // Añadir valor
     array[actual_idx] += value;
     double new_value = array[actual_idx];  // Guardar el valor antes de desmapear
@@ -77,9 +77,9 @@ int ac_stim_main(int argc, char *argv[]) {
     gettimeofday(&tv, NULL);
     uint64_t mtime = (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
     ac_meta_cache_t meta;
-    meta.size = header.size;
+    meta.size = header.n;
     meta.mtime = mtime;
-    meta.checksum = ac_simple_checksum(&header, sizeof(ac_header_t));
+    meta.checksum = ac_simple_checksum(&header, sizeof(ac_bin_header_t));
     ac_write_metadata(name, &meta);
     ac_info("Estimulación aplicada: [%ld] += %g → %g", idx, value, new_value);
     return 0;

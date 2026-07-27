@@ -78,7 +78,7 @@ int ac_view_main(int argc, char *argv[]) {
         return 1;
     }
     // Leer cabecera
-    ac_header_t header;
+    ac_bin_header_t header;
     if (ac_read_header(filepath, &header) != 0) {
         ac_error("No se pudo leer la cabecera");
         return 1;
@@ -92,17 +92,17 @@ int ac_view_main(int argc, char *argv[]) {
         return 1;
     }
     // Los datos comienzan después de la cabecera
-    double *array = (double *)((char *)data + sizeof(ac_header_t));
+    double *array = (double *)((char *)data + sizeof(ac_bin_header_t));
     // Imprimir según formato
     switch (format) {
         case VIEW_MATRIX:
-            print_matrix(array, header.size);
+            print_matrix(array, header.n);
             break;
         case VIEW_CSV:
-            print_csv(array, header.size);
+            print_csv(array, header.n);
             break;
         case VIEW_HEATMAP:
-            print_heatmap(array, header.size);
+            print_heatmap(array, header.n);
             break;
     }
     // Desmapear
