@@ -1,3 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test files
 test/*.dat
 test/*.qdat
-__pycache__
